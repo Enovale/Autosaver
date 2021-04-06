@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Threading;
 using System.Windows.Forms;
 using Windows.Data.Xml.Dom;
@@ -60,30 +61,33 @@ namespace Autosaver
             TrayIconContextMenu.ResumeLayout(false);
             TrayIcon.ContextMenuStrip = TrayIconContextMenu;
             new Thread(AutoSaver).Start();
+            ShowToast();
         }
 
         private void AutoSaver()
         {
             while (true)
             {
-                //var template = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
-                var xml = new XmlDocument();
-                xml.LoadXml(@"
-<toast>
-    <visual>
-        <binding template='ToastGeneric'>
-            <text>Sample toast</text>
-            <text>Sample content</text>
-        </binding>
-    </visual>
-</toast>");
-                var toast = new ToastNotification(xml);
-                ToastNotificationManager.CreateToastNotifier("AutoSaver").Show(toast);
                 //if (SaverReleaseEvent.WaitOne(1000 * 60 * 5))
                 if (SaverReleaseEvent.WaitOne(5000))
                     return;
             }
             // ReSharper disable once FunctionNeverReturns
+        }
+
+        private void ShowToast()
+        {
+            var toastXml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastImageAndText04);
+
+            var stringElements = toastXml.GetElementsByTagName("text");
+            stringElements[0].AppendChild(toastXml.CreateTextNode("Autosaver"));
+            stringElements[1].AppendChild(toastXml.CreateTextNode("Just saved the file!"));
+
+            var imagePath = "file:///" + Path.GetFullPath("Resources/floppy.ico");
+            var imageElements = toastXml.GetElementsByTagName("image");
+
+            var toast = new ToastNotification(toastXml);
+            ToastNotificationManager.GetDefault().CreateToastNotifier("AutoSaver").Show(toast);
         }
 
         private void OnApplicationExit(object sender, EventArgs e)
