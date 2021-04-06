@@ -2,7 +2,8 @@
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
-using Microsoft.Toolkit.Uwp.Notifications;
+using Windows.Data.Xml.Dom;
+using Windows.UI.Notifications;
 
 namespace Autosaver
 {
@@ -30,10 +31,6 @@ namespace Autosaver
 
             TrayIcon = new NotifyIcon
             {
-                BalloonTipIcon = ToolTipIcon.Info,
-                BalloonTipText = "I just autosaved!",
-                BalloonTipTitle = "Autosave",
-                Text = "Autosaver",
                 Icon = new Icon("Resources/floppy.ico")
             };
             
@@ -69,6 +66,19 @@ namespace Autosaver
         {
             while (true)
             {
+                //var template = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+                var xml = new XmlDocument();
+                xml.LoadXml(@"
+<toast>
+    <visual>
+        <binding template='ToastGeneric'>
+            <text>Sample toast</text>
+            <text>Sample content</text>
+        </binding>
+    </visual>
+</toast>");
+                var toast = new ToastNotification(xml);
+                ToastNotificationManager.CreateToastNotifier("AutoSaver").Show(toast);
                 //if (SaverReleaseEvent.WaitOne(1000 * 60 * 5))
                 if (SaverReleaseEvent.WaitOne(5000))
                     return;
