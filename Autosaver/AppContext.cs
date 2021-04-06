@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using Windows.Data.Xml.Dom;
@@ -18,6 +19,13 @@ namespace Autosaver
         private ToolStripMenuItem CloseMenuItem;
         
         private ManualResetEvent SaverReleaseEvent = new(false);
+        
+        const uint KEYEVENTF_KEYUP = 2;
+        const int VK_CONTROL = 0x11;
+        const int VC_S = 0x53;
+
+        [DllImport("user32.dll")]
+        static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
 
         public AppContext()
         {
@@ -61,18 +69,27 @@ namespace Autosaver
             TrayIconContextMenu.ResumeLayout(false);
             TrayIcon.ContextMenuStrip = TrayIconContextMenu;
             new Thread(AutoSaver).Start();
-            ShowToast();
         }
 
         private void AutoSaver()
         {
             while (true)
             {
-                //if (SaverReleaseEvent.WaitOne(1000 * 60 * 5))
-                if (SaverReleaseEvent.WaitOne(5000))
+                if (SaverReleaseEvent.WaitOne(1000 * 60 * 5))
+                //if (SaverReleaseEvent.WaitOne(20000))
                     return;
+                SendSave();
+                ShowToast();
             }
             // ReSharper disable once FunctionNeverReturns
+        }
+
+        private void SendSave()
+        {
+            keybd_event(VK_CONTROL,0,0,0);
+            keybd_event(VC_S, 0, 0, 0 ); //Send the S key
+            keybd_event(VC_S, 0, KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);// 'Left Control Up
         }
 
         private void ShowToast()
